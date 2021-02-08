@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import "../App.css";
-import UploadService from "./UploadService";
-
+import BackendServices from "../services/BackendServices";
 
 export default class UploadFiles extends Component {
   constructor(props) {
@@ -9,18 +8,18 @@ export default class UploadFiles extends Component {
     this.selectFiles = this.selectFiles.bind(this);
     this.upload = this.upload.bind(this);
     this.uploadFiles = this.uploadFiles.bind(this);
+    this.downloadFile = this.downloadFile.bind(this);
 
     this.state = {
       selectedFiles: undefined,
       progressInfos: [],
       message: [],
-
       fileInfos: [],
     };
   }
 
   componentDidMount() {
-    UploadService.getFiles().then((response) => {
+    BackendServices.getUserFiles().then((response) => {
       this.setState({
         fileInfos: response.data,
       });
@@ -37,7 +36,7 @@ export default class UploadFiles extends Component {
   upload(idx, file) {
     let _progressInfos = [...this.state.progressInfos];
 
-    UploadService.upload(file, (event) => {
+    BackendServices.postUserFiles(file, (event) => {
       _progressInfos[idx].percentage = Math.round(
         (100 * event.loaded) / event.total
       );
@@ -56,7 +55,7 @@ export default class UploadFiles extends Component {
           };
         });
 
-        return UploadService.getFiles();
+        return BackendServices.getUserFiles();
       })
       .then((files) => {
         this.setState({
@@ -97,72 +96,89 @@ export default class UploadFiles extends Component {
       }
     );
   }
+  downloadFile(fileurl, fileName) {
+    BackendServices.downloadFile(fileurl, fileName);
+  }
 
   render() {
     const { selectedFiles, progressInfos, message, fileInfos } = this.state;
-
     return (
-      <div className="uplod-files" >
-      <h1 style={{backgroundColor: "MediumSeaGreen"}}className="fw-light">Upload Files</h1>
-        {progressInfos &&
-          progressInfos.map((progressInfo, index) => (
-            <div className="mb-3" key={index}>
-              <span>{progressInfo.fileName}</span>
-              <div className="progress">
-                <div
-                  className="progress-bar progress-bar-info"
-                  role="progressbar"
-                  aria-valuenow={progressInfo.percentage}
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  style={{ width: progressInfo.percentage + "%" }}
-                >
-                  {progressInfo.percentage}%
-                </div>
-              </div>
-            </div>
-          ))}
-
-        <div className="row my-3">
-          <div className="col-8">
+      <>
+        <div className="row">
+          <div className="col-10">
             <label className="btn btn-default p-0">
-              <input type="file" multiple onChange={this.selectFiles} />
+              <input
+                className="form-control form-control-lg"
+                type="file"
+                multiple
+                onChange={this.selectFiles}
+              />
             </label>
           </div>
-
-          <div className="col-4">
+          <div className="col-2">
             <button
-              className="btn btn-success btn-sm"
+              className="btn btn-success  btn-lg"
               disabled={!selectedFiles}
               onClick={this.uploadFiles}
             >
               Upload
             </button>
           </div>
+          <div className="col-12 mt-3">
+            {message.length > 0 && (
+              <div className="alert alert-primary" role="alert">
+                <ul>
+                  {message.map((item, i) => {
+                    return <li key={i}>{item}</li>;
+                  })}
+                </ul>
+              </div>
+            )}
+            {progressInfos &&
+              progressInfos.map((progressInfo, index) => (
+                <div className="mb-3" key={index}>
+                  <span>{progressInfo.fileName}</span>
+                  <div className="progress">
+                    <div
+                      className="progress-bar bg-success"
+                      role="progressbar"
+                      aria-valuenow={progressInfo.percentage}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      style={{ width: progressInfo.percentage + "%" }}
+                    >
+                      {progressInfo.percentage}%
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
-
-        {message.length > 0 && (
-          <div className="alert alert-secondary" role="alert">
-            <ul>
-              {message.map((item, i) => {
-                return <li key={i}>{item}</li>;
-              })}
+        <div className="row mt-5">
+          <div className="col-12">
+            <ul className="list-group">
+              <li class="list-group-item active" aria-current="true">
+                List of Files
+              </li>
+              {fileInfos &&
+                fileInfos.map((file, index) => (
+                  <li className="list-group-item" key={index}>
+                    {file.actualFileName}
+                    <button
+                      class="btn btn-info btn-sm float-end"
+                      onClick={() => {
+                        this.downloadFile(file.url, file.actualFileName);
+                      }}
+                      targe="_blank"
+                    >
+                      Download
+                    </button>
+                  </li>
+                ))}
             </ul>
           </div>
-        )}
-
-        <div className="card">
-          <div className="card-header">List of Files</div>
-          <ul className="list-group list-group-flush">
-            {fileInfos &&
-              fileInfos.map((file, index) => (
-                <li className="list-group-item" key={index}>
-                  <a href={file.url}>{file.name}</a>
-                </li>
-              ))}
-          </ul>
         </div>
-      </div>
+      </>
     );
   }
 }

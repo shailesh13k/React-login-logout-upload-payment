@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import "../App.css";
-import axios from "axios";
-import { API_BASE_URL, ACCESS_TOKEN_NAME } from "../constants/apiConstants";
 import { withRouter } from "react-router-dom";
+import AuthenticationService from "../services/AuthenticationService";
+import Header from "./Header";
 
 function LoginForm(props) {
   const [state, setState] = useState({
     email: "",
     password: "",
-    successMessage: null,
+    error: "",
   });
+
   const handleChange = (e) => {
     const { id, value } = e.target;
     setState((prevState) => ({
@@ -18,97 +19,94 @@ function LoginForm(props) {
     }));
   };
 
-  const handleSubmitClick = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = {
-      email: state.email,
-      password: state.password,
-    };
-    axios
-      .post(API_BASE_URL + "/api/auth/signin", payload)
-      .then(function (response) {
-        if (response.status === 200) {
-                    setState((prevState) => ({
-            ...prevState,
-            successMessage: "Login successful. Redirecting to home page..",
-          }));
-          localStorage.setItem(ACCESS_TOKEN_NAME, response.data.token);
-          redirectToHome();
-          props.showError(null);
-        } else if (response.code === 204) {
-          props.showError("Username and password do not match");
-        } else {
-          props.showError("Username does not exists");
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+
+    AuthenticationService.signin(state.email, state.password).then(
+      () => {
+        props.history.push("/home");
+      },
+      (error) => {
+        console.log("Login fail: error = { " + error.toString() + " }");
+        setState({
+          error:
+            "Can not signin successfully ! Please check username/password again",
+        });
+      }
+    );
   };
-  const redirectToHome = () => {
-    props.updateTitle("home");
-    props.history.push("/home");
-  };
-  const redirectToRegister = () => {
-    props.history.push("/register");
-    props.updateTitle("Register");
-  };
+
   return (
-    
-      <div className="form-login">
-      <h1 style={{backgroundColor: "MediumSeaGreen"}}className="fw-light">Login Form</h1>
-        <form>
-          <div className="mb-3">
-            <label htmlFor="exampleInputEmail1" className="form-label">Email address</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              aria-describedby="emailHelp"
-              placeholder="Enter email"
-              value={state.email}
-              onChange={handleChange}
-            />
-            <small id="emailHelp" className="form-text text-muted">
-              We'll never share your email with anyone else.
-            </small>
+    <>
+      <Header />
+      <main id="main">
+        <section id="breadcrumbs" className="breadcrumbs">
+          <div className="container">
+            <ol>
+              <li>
+                <a href="/">Home</a>
+              </li>
+              <li>Login</li>
+            </ol>
           </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputPassword1" className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              placeholder="Password"
-              value={state.password}
-              onChange={handleChange}
-            />
+        </section>
+        <section className="inner-page">
+          <div className="container">
+            <div className="website-form">
+              <div class="section-title">
+                <h2>Login Form</h2>
+              </div>
+              <div
+                className="alert alert-danger"
+                style={{ display: state.error ? "block" : "none" }}
+                role="alert"
+              >
+                {state.error}
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="exampleInputEmail1" className="form-label">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    required
+                    aria-describedby="emailHelp"
+                    placeholder="Enter email"
+                    value={state.email}
+                    onChange={handleChange}
+                  />
+                  <small id="emailHelp" className="form-text text-muted">
+                    We'll never share your email with anyone else.
+                  </small>
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="exampleInputPassword1" className="form-label">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    required
+                    id="password"
+                    placeholder="Password"
+                    value={state.password}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-check"></div>
+                <button type="submit" className="btn btn-primary">
+                  Submit
+                </button>
+              </form>
+            </div>
           </div>
-          <div className="form-check"></div>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            onClick={handleSubmitClick}
-          >
-          Submit
-          </button>
-        </form>
-        <div
-          className="alert alert-success mt-2"
-          style={{ display: state.successMessage ? "block" : "none" }}
-          role="alert"
-        >
-          {state.successMessage}
-        </div>
-        <div className="registerMessage">
-          <span>Dont have an account? </span>
-          <span className="loginText" onClick={() => redirectToRegister()}>
-            Register
-          </span>
-        </div>
-        <br/><br/><br/><br/><br/>
-      </div>
-    
+        </section>
+      </main>
+    </>
   );
 }
 

@@ -1,172 +1,168 @@
 import React, { useState } from "react";
 import "../App.css";
-import axios from "axios";
-import { API_BASE_URL, ACCESS_TOKEN_NAME } from "../constants/apiConstants";
 import { withRouter } from "react-router-dom";
+import AuthenticationService from "../services/AuthenticationService";
+import Header from "./Header";
 function RegistrationForm(props) {
-  const [state, setState] = useState({
-    firstname: "",
-    lastname: "",
-    mobile: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    successMessage: null,
-    
-  });
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setState((prevState) => ({
-      ...prevState,
-      [id]: value,
-    }));
-  };
+  const [firstName, setFirstName] = useState();
+  const [lastName, setLastName] = useState();
+  const [mobile, setMobile] = useState();
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
+  const [confirmPassword, setConfirmPassword] = useState();
+  const [message, setMessage] = useState();
+
   const sendDetailsToServer = () => {
-    //  alert(state.email.length && state.password.length);
-    if (state.email.length && state.password.length) {
-      props.showError(null);
-      const payload = {
-        firstName: state.firstname,
-        lastName: state.lastname,
-        mobile: state.mobile,
-        email: state.email,
-        password: state.password,
-        userName: "username",
-      };
-      axios
-        .post(API_BASE_URL + "/api/auth/signup", payload)
-        .then(function (response) {
-          if (response.status === 200) {
-            setState((prevState) => ({
-              ...prevState,
-              successMessage:
-                "Registration successful. Redirecting to home page..",
-            }));
-            localStorage.setItem(ACCESS_TOKEN_NAME, response.data.token);
-            redirectToHome();
-            props.showError(null);
-          } else {
-            props.showError("Some error ocurred");
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    } else {
-      props.showError("Please enter valid username and password");
+    if (email.length && password.length) {
+      AuthenticationService.register(
+        firstName,
+        lastName,
+        mobile,
+        email,
+        password
+      ).then(
+        (response) => {
+          setMessage(response.data.message);
+        },
+        (error) => {
+          console.log("Fail! Error = " + error.toString());
+          setMessage(error.toString());
+        }
+      );
     }
   };
-  const redirectToHome = () => {
-    props.updateTitle("home");
-    props.history.push("/");
-  };
-  const redirectToLogin = () => {
-    props.updateTitle("login");
-    props.history.push("/login");
-  };
-  const handleSubmitClick = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (state.password === state.confirmPassword) {
+    if (password === confirmPassword) {
       sendDetailsToServer();
     } else {
       props.showError("Passwords do not match");
     }
   };
+
   return (
-    <div className="form-registration">
-        <h1 style={{backgroundColor: "MediumSeaGreen"}}className="page-title">Register Form</h1>
-        <form>
-          <div className="mb-2">
-            <label htmlFor="exampleInputFirstname1" className="form-label">First Name</label>
-            <input  type="text"
-              className="form-control"
-              id="firstname"
-              placeholder="Enter firstname"
-              value={state.firstname}
-              onChange={handleChange}
-            />
+    <>
+      <Header />
+      <main id="main">
+        <section id="breadcrumbs" className="breadcrumbs">
+          <div className="container">
+            <ol>
+              <li>
+                <a href="/">Home</a>
+              </li>
+              <li>Register</li>
+            </ol>
           </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputFirstname1"  className="form-label">Last Name</label>
-            <input
-              type="text"
-              className="form-control"
-              id="lastname"
-              placeholder="Enter lastname"
-              value={state.lastname}
-              onChange={handleChange}
-            />
+        </section>
+        <div className="website-form">
+          <div class="section-title">
+            <h2>Register Form</h2>
           </div>
-          
-          <div className="mb-3">
-            <label htmlFor="exampleInputFirstname1" className="form-label">Mobile</label>
-            <input
-              type="mobile"
-              className="form-control"
-              id="mobile"
-              placeholder="Enter mobile"
-              value={state.mobile}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputEmail1" className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              aria-describedby="emailHelp"
-              placeholder="Enter email"
-              value={state.email}
-              onChange={handleChange}
-            />
-            <small id="emailHelp" className="form-text text-muted">
-              We'll never share your email with anyone else.
-            </small>
-          </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputPassword1" className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              placeholder="Password"
-              value={state.password}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="exampleInputPassword1" className="form-label">Confirm Password</label>
-            <input
-              type="password"
-              className="form-control"
-              id="confirmPassword"
-              placeholder="Confirm Password"
-              value={state.confirmPassword}
-              onChange={handleChange}
-            />
-          </div>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            onClick={handleSubmitClick}
+
+          <div
+            className="alert alert-success"
+            style={{ display: message ? "block" : "none" }}
+            role="alert"
           >
-            Register
-          </button>
-        </form>
-           <div className="alert alert-success mt-2" 
-		     	style={{display: state.successMessage ? 'block' : 'none' }} role="alert">
-          {state.successMessage}
-           </div>
-        
-        <div className="mt-2">
-          <span>Already have an account? </span>
-          <span className="loginText" onClick={() => redirectToLogin()}>
-            Login here
-          </span>
+            {message}
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-2">
+              <label htmlFor="firstName" className="form-label">
+                First Name
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                required
+                id="firstName"
+                placeholder="Enter firstname"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div className="mb-2">
+              <label htmlFor="lastName" className="form-label">
+                Last Name
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="lastName"
+                placeholder="Enter lastname"
+                value={lastName}
+                required
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+
+            <div className="mb-2">
+              <label htmlFor="mobile" className="form-label">
+                Mobile
+              </label>
+              <input
+                type="mobile"
+                className="form-control"
+                id="mobile"
+                placeholder="Enter mobile"
+                value={mobile}
+                required
+                onChange={(e) => setMobile(e.target.value)}
+              />
+            </div>
+            <div className="mb-2">
+              <label htmlFor="email" className="form-label">
+                Email Address
+              </label>
+              <input
+                type="email"
+                className="form-control"
+                id="email"
+                aria-describedby="emailHelp"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <small id="emailHelp" className="form-text text-muted">
+                We'll never share your email with anyone else.
+              </small>
+            </div>
+            <div className="mb-2">
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                id="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-2">
+              <label htmlFor="confirmPassword" className="form-label">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                id="confirmPassword"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary">
+              Register
+            </button>
+          </form>
         </div>
-      </div>
-    
+      </main>
+    </>
   );
 }
 
